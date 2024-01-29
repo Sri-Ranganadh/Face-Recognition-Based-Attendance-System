@@ -15,16 +15,17 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS Students (
 
 # Create Schedule table
 cursor.execute('''CREATE TABLE IF NOT EXISTS Schedule (
-                    ScheduleID INTEGER PRIMARY KEY,
+                    ScheduleID INTEGER PRIMARY KEY AUTOINCREMENT,
                     SubjectCode TEXT,
                     Date DATE,
                     SubjectName TEXT,
                     Shift TEXT
                 )''')
 
+
 # Create Attendance table
 cursor.execute('''CREATE TABLE IF NOT EXISTS Attendance (
-                    AttendanceID INTEGER PRIMARY KEY,
+                    AttendanceID TEXT PRIMARY KEY,
                     StudentID INTEGER,
                     ScheduleID INTEGER,
                     Date DATE,

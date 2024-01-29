@@ -13,7 +13,8 @@ This project is a face recognition-based attendance system that uses OpenCV and 
 3. Check the Database by `python app.py`.
 
 
-Still  need to make numerous changes and rectify errors....
+Still need to run features_extraction_to_csv.py manually after registering all the students.
+
 
 
 

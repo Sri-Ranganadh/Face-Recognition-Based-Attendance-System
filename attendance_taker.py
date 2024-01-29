@@ -7,7 +7,7 @@ import time
 import logging
 import sqlite3
 import datetime
-
+import sys
 
 # Dlib  / Use frontal face detector of Dlib
 detector = dlib.get_frontal_face_detector()
@@ -141,33 +141,49 @@ class Face_Recognizer:
                                  cv2.LINE_AA)
 
     # insert data in database
-    def attendance(self, name, current_date, current_time, in_time=True):
+    def attendance(self, StudentID,ScheduleID, current_date, current_time, in_time=True):
         conn = sqlite3.connect("attendance.db")
         cursor = conn.cursor()
-
+        AttendanceID = StudentID+"_"+ScheduleID
         # Check if the name already has an entry for the current date
-        cursor.execute("SELECT * FROM Attendance WHERE name = ? AND date = ?", (name, current_date))
+        print("/n/n/n"+AttendanceID+"/n/n/n")
+        #cursor.execute("SELECT * FROM Attendance WHERE AttendanceID = ?",(AttendanceID))
+        query = "SELECT * FROM Attendance WHERE AttendanceID = ?"
+        cursor.execute(query, (AttendanceID,))
+
         existing_entry = cursor.fetchone()
 
         if existing_entry:
-            if in_time:
-                print(f"{name} is already marked as present for {current_date}")
+            # Get the current time
+            current_datetime = datetime.datetime.now()
+
+            # Convert the existing entry's time to a datetime object
+            existing_datetime = datetime.datetime.strptime(existing_entry[4], '%H:%M:%S')
+
+            # Calculate the time difference in minutes
+            time_difference = (current_datetime - existing_datetime).total_seconds() / 60
+
+            # Check if the time difference is greater than 10 minutes
+            if time_difference > 50:
+                # Update the OutTime in the database
+                out_time = current_datetime.strftime('%H:%M:%S')
+                cursor.execute("UPDATE Attendance SET OutTime = ? WHERE AttendanceID= ?", (out_time, AttendanceID))
+                print(f"{StudentID} marked as left for {current_date} at {out_time}")
+                print(f"Total time present is {time_difference}")
             else:
-                out_time = datetime.datetime.strptime(current_time, '%H:%M:%S')
-                cursor.execute("UPDATE Attendance SET out_time = ? WHERE name = ? AND date = ?", (out_time, name, current_date))
-                print(f"{name} marked as left for {current_date} at {current_time}")
+                print(f"{StudentID} already marked as present for {current_date}")
         else:
             if in_time:
-                cursor.execute("INSERT INTO Attendance (name, in_time, date) VALUES (?, ?, ?)", (name, current_time, current_date))
-                print(f"{name} marked as present for {current_date} at {current_time}")
+                cursor.execute("INSERT INTO Attendance (AttendanceID,StudentID,ScheduleID,Date,InTime) VALUES (?, ?, ?, ?, ?)", (AttendanceID,StudentID,ScheduleID,current_date, current_time ))
+                print(f"{StudentID} marked as present for {current_date} at {current_time}")
             else:
-                print(f"{name} cannot be marked as left before being marked present for {current_date}")
+                print(f"{StudentID} cannot be marked as left before being marked present for {current_date}")
 
         conn.commit()
         conn.close()
 
     #  Face detection and recognition wit OT from input video stream
-    def process(self, stream):
+    def process(self, stream,ScheduleID):
         # 1.  Get faces known from "features.all.csv"
         if self.get_face_database():
             while stream.isOpened():
@@ -291,7 +307,8 @@ class Face_Recognizer:
                                     shift = 'Forenoon'
                                 else:
                                     shift = 'Afternoon'
-                                self.attendance(name, current_date, current_time, in_time=True)
+                                print(name)
+                                self.attendance(name,ScheduleID, current_date, current_time, in_time=True)
                             else:
                                 logging.debug("  Face recognition result: Unknown person")
 
@@ -311,10 +328,10 @@ class Face_Recognizer:
     
 
 
-    def run(self):
+    def run(self,ScheduleID):
         # cap = cv2.VideoCapture("video.mp4")  # Get video stream from video file
         cap = cv2.VideoCapture(0)              # Get video stream from camera
-        self.process(cap)
+        self.process(cap,ScheduleID)
 
         cap.release()
         cv2.destroyAllWindows()
@@ -324,9 +341,11 @@ class Face_Recognizer:
 
 def main():
     # logging.basicConfig(level=logging.DEBUG) # Set log level to 'logging.DEBUG' to print debug info of every frame
+    ScheduleID = " ".join(sys.argv[1:])
+    print(ScheduleID)
     logging.basicConfig(level=logging.INFO)
     Face_Recognizer_con = Face_Recognizer()
-    Face_Recognizer_con.run()
+    Face_Recognizer_con.run(ScheduleID)
 
 
 if __name__ == '__main__':
