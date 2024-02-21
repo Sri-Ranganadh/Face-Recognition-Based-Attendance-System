@@ -220,7 +220,7 @@ class Face_Register:
             else:
                 self.log_all["text"] = "No face in current frame!"
         else:
-            self.log_all["text"] = "Please run step 2!"
+            self.log_all["text"] = "Please run step 1!"
 
     def get_frame(self):
         try:

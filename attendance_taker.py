@@ -141,39 +141,41 @@ class Face_Recognizer:
                                  cv2.LINE_AA)
 
     # insert data in database
-    def attendance(self, StudentID,ScheduleID, current_date, current_time, in_time=True):
+    def attendance(self, StudentID,ScheduleID, current_time, in_time=True):
         conn = sqlite3.connect("attendance.db")
         cursor = conn.cursor()
         AttendanceID = StudentID+"_"+ScheduleID
-        # Check if the name already has an entry for the current date
-        print("/n/n/n"+AttendanceID+"/n/n/n")
+
         #cursor.execute("SELECT * FROM Attendance WHERE AttendanceID = ?",(AttendanceID))
         query = "SELECT * FROM Attendance WHERE AttendanceID = ?"
         cursor.execute(query, (AttendanceID,))
-
+        current_date = datetime.datetime.now().strftime('%Y-%m-%d')
         existing_entry = cursor.fetchone()
 
         if existing_entry:
             # Get the current time
             current_datetime = datetime.datetime.now()
-
             # Convert the existing entry's time to a datetime object
-            existing_datetime = datetime.datetime.strptime(existing_entry[4], '%H:%M:%S')
-
+            existing_time = datetime.datetime.strptime(existing_entry[4], '%H:%M:%S').time()
+            existing_datetime = datetime.datetime.combine(current_datetime.date(), existing_time)
+            print(existing_datetime)
+            print("existing_datetime :",existing_datetime) 
+            print("current_datetime :",current_datetime)
             # Calculate the time difference in minutes
-            time_difference = (current_datetime - existing_datetime).total_seconds() / 60
-
+            time_difference = ((current_datetime - existing_datetime).total_seconds())/60
+            print('time difference = '+str(time_difference))
             # Check if the time difference is greater than 10 minutes
             if time_difference > 50:
                 # Update the OutTime in the database
-                out_time = current_datetime.strftime('%H:%M:%S')
-                cursor.execute("UPDATE Attendance SET OutTime = ? WHERE AttendanceID= ?", (out_time, AttendanceID))
-                print(f"{StudentID} marked as left for {current_date} at {out_time}")
+                
+                cursor.execute("UPDATE Attendance SET OutTime = ? WHERE AttendanceID= ?", (current_time, AttendanceID))
+                print(f"{StudentID} marked as left for {current_date} at {current_time}")
                 print(f"Total time present is {time_difference}")
             else:
                 print(f"{StudentID} already marked as present for {current_date}")
         else:
             if in_time:
+                current_time = datetime.datetime.now().strftime('%H:%M:%S')
                 cursor.execute("INSERT INTO Attendance (AttendanceID,StudentID,ScheduleID,Date,InTime) VALUES (?, ?, ?, ?, ?)", (AttendanceID,StudentID,ScheduleID,current_date, current_time ))
                 print(f"{StudentID} marked as present for {current_date} at {current_time}")
             else:
@@ -301,14 +303,13 @@ class Face_Recognizer:
                                 
                                 # Insert attendance record
                                 name = self.face_name_known_list[similar_person_num]
-                                current_date = datetime.datetime.now().strftime('%Y-%m-%d')
                                 current_time = datetime.datetime.now().strftime('%H:%M:%S')
                                 if datetime.datetime.now().strftime('%p') == 'AM':
                                     shift = 'Forenoon'
                                 else:
                                     shift = 'Afternoon'
                                 print(name)
-                                self.attendance(name,ScheduleID, current_date, current_time, in_time=True)
+                                self.attendance(name,ScheduleID, current_time, in_time=True)
                             else:
                                 logging.debug("  Face recognition result: Unknown person")
 

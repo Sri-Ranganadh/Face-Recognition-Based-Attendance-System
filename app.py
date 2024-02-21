@@ -117,6 +117,41 @@ def submit_schedule():
             return render_template('index.html')
     return render_template('index.html')
 
+
+
+@app.route('/showAttendance', methods=['POST'])
+def getAttendance():
+    subject_code = request.form.get('SubjectCode').upper()
+    date = request.form.get('Date')
+    shift = request.form.get('Shift').upper()
+    
+    # Connect to the SQLite database
+    conn = sqlite3.connect('attendance.db')
+    cursor = conn.cursor()
+    
+    # Check if the schedule already exists
+    cursor.execute("SELECT * FROM Schedule WHERE SubjectCode = ? AND Date = ? AND Shift = ?", (subject_code, date, shift))
+    existing_schedule = cursor.fetchone()
+    
+    if existing_schedule:
+        schedule_id = existing_schedule[0]  # Assuming the first column is ScheduleID
+        
+        # Retrieve attendance records for the specific schedule
+        cursor.execute("SELECT * FROM Attendance WHERE ScheduleID = ?", (schedule_id,))
+        attendance_records = cursor.fetchall()
+        
+        # Close the database connection
+        conn.close()
+        
+        # Render the attendance details in the template
+        return render_template('attendance.html', attendance_records=attendance_records)
+    else:
+        # Handle the case where the schedule doesn't exist
+        print("Schedule not found")
+        return render_template('schedule_not_found.html')  # Example: render a template for schedule not found
+
+
+
 def take_attendance(subject_code, date, shift):
     #redirecting it to attendance_taker.py by passing schedule-id
     conn = sqlite3.connect('attendance.db')

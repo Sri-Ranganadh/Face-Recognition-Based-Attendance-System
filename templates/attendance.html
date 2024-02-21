@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Details</title>
+</head>
+<body>
+    <h1>Attendance Details</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Date</th>
+                <th>In Time</th>
+                <th>Out Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in attendance_records %}
+            <tr>
+                <td>{{ record[1] }}</td>
+                <td>{{ record[3] }}</td>
+                <td>{{ record[4] }}</td>
+                <td>{{ record[5] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
